@@ -25,7 +25,6 @@ export async function syncUser(input: SyncUserInput): Promise<UserResponse> {
         email: input.email,
         name: input.name || null,
         imageUrl: input.imageUrl || null,
-        plan: input.plan,
         updatedAt: now,
       })
       .where(eq(users.id, input.clerkUserId))
@@ -42,7 +41,6 @@ export async function syncUser(input: SyncUserInput): Promise<UserResponse> {
       email: input.email,
       name: input.name || null,
       imageUrl: input.imageUrl || null,
-      plan: input.plan,
       createdAt: now,
       updatedAt: now,
     })

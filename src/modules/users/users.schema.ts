@@ -6,7 +6,6 @@ export const syncUserSchema = z.object({
   email: z.string().email("Invalid email format"),
   name: z.string().optional(),
   imageUrl: z.string().url().optional(),
-  plan: z.enum(["free", "pro", "enterprise"]).default("free"),
 });
 
 export type SyncUserInput = z.infer<typeof syncUserSchema>;
@@ -17,7 +16,6 @@ export const userResponseSchema = z.object({
   email: z.string().email(),
   name: z.string().nullable(),
   imageUrl: z.string().nullable(),
-  plan: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -27,8 +25,7 @@ export type UserResponse = z.infer<typeof userResponseSchema>;
 // Schema simplificado para request.user
 export const requestUserSchema = z.object({
   id: z.string(),
-  email: z.string(),
-  plan: z.string(),
+  email: z.email(),
 });
 
 export type RequestUser = z.infer<typeof requestUserSchema>;
