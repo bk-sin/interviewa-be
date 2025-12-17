@@ -10,6 +10,12 @@ jobs:
   api-tests:
     runs-on: ubuntu-latest
 
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
