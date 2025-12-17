@@ -31,11 +31,25 @@ jobs:
 
       - name: Build project
         run: npm run build
+      
+      - name: Verify build output
+        run: |
+          echo "📦 Checking build output..."
+          ls -la dist/
+          if [ ! -f dist/app.js ]; then
+            echo "❌ dist/app.js not found!"
+            exit 1
+          fi
+          echo "✅ Build files present"
 
       - name: Start server in background
         run: |
           echo "🚀 Starting server..."
-          nohup node dist/app.js > server.log 2>&1 &
+          echo "Working directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          
+          # Start server and capture all output
+          node dist/app.js > server.log 2>&1 &
           SERVER_PID=$!
           echo "Server PID: $SERVER_PID"
           echo $SERVER_PID > server.pid
@@ -43,15 +57,18 @@ jobs:
           echo "⏳ Waiting for server to start..."
           sleep 3
           
+          # Show initial logs
+          echo "=== INITIAL SERVER LOGS ==="
+          cat server.log
+          echo "=== END INITIAL LOGS ==="
+          
           # Check if process is still running
           if ! kill -0 $SERVER_PID 2>/dev/null; then
             echo "❌ Server process died immediately!"
-            echo "=== SERVER LOGS ==="
+            echo "=== FULL SERVER LOGS ==="
             cat server.log
             exit 1
-          fi
-
-          # Wait for server to be ready (max 30 seconds)
+          fi          # Wait for server to be ready (max 30 seconds)
           for i in {1..30}; do
             if curl -s http://localhost:3000/interviews/active > /dev/null 2>&1; then
               echo "✅ Server is ready!"
