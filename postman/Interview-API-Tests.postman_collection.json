@@ -1,0 +1,477 @@
+{
+  "info": {
+    "name": "Interview API - Automated Tests",
+    "description": "Colección con tests automatizados para Interview API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Start Interview",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "// ✅ Validar estructura de respuesta",
+              "pm.test('Response has required fields', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('interviewId');",
+              "    pm.expect(jsonData).to.have.property('state');",
+              "    pm.expect(jsonData).to.have.property('screen');",
+              "    pm.expect(jsonData).to.have.property('payload');",
+              "});",
+              "",
+              "// ✅ Validar estado inicial",
+              "pm.test('State is QUESTION', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.state).to.be.oneOf(['INTRO', 'QUESTION']);",
+              "});",
+              "",
+              "// ✅ Validar screen field",
+              "pm.test('Screen field exists', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.screen).to.be.a('string');",
+              "    pm.expect(jsonData.screen.length).to.be.greaterThan(0);",
+              "});",
+              "",
+              "// ✅ Guardar interviewId automáticamente",
+              "if (pm.response.code === 201) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.environment.set('interviewId', jsonData.interviewId);",
+              "    console.log('✅ Interview ID guardado:', jsonData.interviewId);",
+              "}",
+              "",
+              "// ✅ Validar payload tiene question",
+              "pm.test('Payload has question', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.payload).to.have.property('question');",
+              "    pm.expect(jsonData.payload).to.have.property('totalQuestions');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roleId\": \"senior-backend-engineer\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/interviews/start",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "start"]
+        }
+      }
+    },
+    {
+      "name": "2. Submit Answer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar transición a MICRO_FEEDBACK",
+              "pm.test('State is MICRO_FEEDBACK', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.state).to.equal('MICRO_FEEDBACK');",
+              "});",
+              "",
+              "// ✅ Validar screen correcto",
+              "pm.test('Screen is MicroFeedbackScreen', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.screen).to.equal('MicroFeedbackScreen');",
+              "});",
+              "",
+              "// ✅ Validar feedback en payload",
+              "pm.test('Payload has partial feedback', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.payload).to.have.property('partialFeedback');",
+              "});",
+              "",
+              "// ✅ Validar tiempo de respuesta",
+              "pm.test('Response time is less than 2s', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// ✅ Verificar que tenemos interviewId",
+              "const interviewId = pm.environment.get('interviewId');",
+              "if (!interviewId) {",
+              "    throw new Error('❌ No interviewId found. Run \"Start Interview\" first!');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"audioUrl\": \"https://example.com/audio.mp3\",\n  \"durationMs\": 45000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/answer",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "answer"]
+        }
+      }
+    },
+    {
+      "name": "3. Continue After Feedback",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar transición a QUESTION",
+              "pm.test('State is QUESTION', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.state).to.equal('QUESTION');",
+              "});",
+              "",
+              "// ✅ Validar screen",
+              "pm.test('Screen is QuestionScreen', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.screen).to.equal('QuestionScreen');",
+              "});",
+              "",
+              "// ✅ Validar nueva pregunta en payload",
+              "pm.test('Payload has next question', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.payload).to.have.property('question');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/continue",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "continue"]
+        }
+      }
+    },
+    {
+      "name": "4. Get State (Idempotent)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar estructura",
+              "pm.test('Response has state and screen', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('state');",
+              "    pm.expect(jsonData).to.have.property('screen');",
+              "    pm.expect(jsonData).to.have.property('payload');",
+              "});",
+              "",
+              "// ✅ Idempotencia - guardar estado para comparar",
+              "const currentState = pm.response.json();",
+              "const previousState = pm.collectionVariables.get('lastState');",
+              "",
+              "if (previousState) {",
+              "    pm.test('GET /state is idempotent', function () {",
+              "        pm.expect(currentState.state).to.equal(JSON.parse(previousState).state);",
+              "    });",
+              "}",
+              "",
+              "pm.collectionVariables.set('lastState', JSON.stringify(currentState));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/state",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "state"]
+        }
+      }
+    },
+    {
+      "name": "5. Pause Interview",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar respuesta de pausa",
+              "pm.test('Response confirms pause', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/pause",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "pause"]
+        }
+      }
+    },
+    {
+      "name": "6. Get Active Interview",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar puede resumir",
+              "pm.test('Can resume paused interview', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('canResume');",
+              "    pm.expect(jsonData.canResume).to.be.true;",
+              "});",
+              "",
+              "// ✅ Validar tiene interview data",
+              "pm.test('Has interview data', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('interview');",
+              "    pm.expect(jsonData.interview).to.not.be.null;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/active",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "active"]
+        }
+      }
+    },
+    {
+      "name": "7. Resume Interview",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar volvió a QUESTION",
+              "pm.test('State is QUESTION after resume', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.state).to.equal('QUESTION');",
+              "});",
+              "",
+              "// ✅ Validar tiene mensaje de bienvenida",
+              "pm.test('Has welcome message', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.payload).to.have.property('message');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/resume",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "resume"]
+        }
+      }
+    },
+    {
+      "name": "8. Heartbeat",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar status code",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// ✅ Validar respuesta exitosa",
+              "pm.test('Heartbeat successful', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});",
+              "",
+              "// ✅ Validar tiempo de respuesta rápido",
+              "pm.test('Heartbeat is fast (< 100ms)', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(100);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/heartbeat",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "heartbeat"]
+        }
+      }
+    },
+    {
+      "name": "9. Error - Invalid Transition (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar error 400",
+              "pm.test('Status code is 400 for invalid transition', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "// ✅ Validar error type",
+              "pm.test('Error type is InvalidTransition', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.equal('InvalidTransition');",
+              "});",
+              "",
+              "// ✅ Validar tiene mensaje",
+              "pm.test('Error has message', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message.length).to.be.greaterThan(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Este request fallará porque intentamos continue() desde QUESTION",
+              "// continue() solo es válido desde MICRO_FEEDBACK",
+              "// En este punto del flujo estamos en QUESTION (después del último Continue en request #3)"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/{{interviewId}}/continue",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "{{interviewId}}", "continue"]
+        }
+      }
+    },
+    {
+      "name": "10. Error - Not Found (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ✅ Validar error 404",
+              "pm.test('Status code is 404 for non-existent interview', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "// ✅ Validar error type",
+              "pm.test('Error type is NotFound', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.equal('NotFound');",
+              "});",
+              "",
+              "// ✅ Validar mensaje descriptivo",
+              "pm.test('Error message mentions not found', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message.toLowerCase()).to.include('not found');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/interviews/non-existent-id-12345/state",
+          "host": ["{{baseUrl}}"],
+          "path": ["interviews", "non-existent-id-12345", "state"]
+        }
+      }
+    }
+  ]
+}
