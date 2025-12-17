@@ -21,11 +21,3 @@ export const userResponseSchema = z.object({
 });
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
-
-// Schema simplificado para request.user
-export const requestUserSchema = z.object({
-  id: z.string(),
-  email: z.email(),
-});
-
-export type RequestUser = z.infer<typeof requestUserSchema>;
