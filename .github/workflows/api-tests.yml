@@ -1,0 +1,52 @@
+name: API Tests
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Start server in background
+        run: |
+          npm run dev &
+          echo "Waiting for server to start..."
+          sleep 5
+          curl --retry 5 --retry-delay 2 --retry-connrefused http://localhost:3000/interviews/active || echo "Server not ready yet"
+      
+      - name: Install Newman
+        run: npm install -g newman
+      
+      - name: Run Postman API Tests
+        run: |
+          newman run postman/Interview-API-Tests.postman_collection.json \
+            -e postman/Interview-API-Local.postman_environment.json \
+            --reporters cli,json \
+            --reporter-json-export newman-results.json
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-results
+          path: newman-results.json
+          retention-days: 30
