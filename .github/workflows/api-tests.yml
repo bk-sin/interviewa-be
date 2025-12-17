@@ -31,7 +31,7 @@ jobs:
 
       - name: Build project
         run: npm run build
-      
+
       - name: Verify build output
         run: |
           echo "📦 Checking build output..."
@@ -44,24 +44,24 @@ jobs:
 
       - name: Start server in background
         run: |
-          echo "🚀 Starting server..."
+          echo "🚀 Starting server with fastify-cli..."
           echo "Working directory: $(pwd)"
           echo "Node version: $(node --version)"
-          
-          # Start server and capture all output
-          node dist/app.js > server.log 2>&1 &
+
+          # Use fastify-cli like npm start does
+          npx fastify start -l info dist/app.js > server.log 2>&1 &
           SERVER_PID=$!
           echo "Server PID: $SERVER_PID"
           echo $SERVER_PID > server.pid
-          
+
           echo "⏳ Waiting for server to start..."
-          sleep 3
-          
+          sleep 5
+
           # Show initial logs
           echo "=== INITIAL SERVER LOGS ==="
           cat server.log
           echo "=== END INITIAL LOGS ==="
-          
+
           # Check if process is still running
           if ! kill -0 $SERVER_PID 2>/dev/null; then
             echo "❌ Server process died immediately!"
